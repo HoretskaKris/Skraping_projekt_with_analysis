@@ -6,96 +6,95 @@ from bs4 import BeautifulSoup
 import logging
 from typing import List, Optional, Union
 
-# Налаштування логування
 logging.basicConfig(
     filename='logs/scraping_log.log',
     filemode='a',
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levellevel)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     encoding='utf-8',
     level=logging.INFO
 )
 
 def connect(url: str) -> BeautifulSoup:
-    '''Підключення до ресурсу'''
+    '''Connect to the resource'''
     try:
         r = requests.get(url)
-        r.raise_for_status()  # Перевірка на помилки HTTP
+        r.raise_for_status()
         soup = BeautifulSoup(r.text, 'lxml')
-        logging.info(f"Успішне підключення до {url}")
+        logging.info(f"Successful connection to {url}")
         return soup
     except requests.exceptions.RequestException as e:
-        logging.error(f"Помилка підключення до {url}: {e}")
+        logging.error(f"Connection error to {url}: {e}")
         exit(1)
 
 def get_last_page(url: str) -> int:
-    '''Знаходимо останню сторінку з продуктами'''
+    '''Find the last page with products'''
     try:
         last_page = connect(url).findAll('a', class_='pagination__link ng-star-inserted')
-        logging.info("Знайдено останню сторінку з продуктами")
+        logging.info("Last page with products found")
         return int(last_page[-1].text)
     except Exception as e:
-        logging.error(f"Не вдалося знайти останню сторінку: {e}")
+        logging.error(f"Failed to find the last page: {e}")
         exit(1)
 
 def get_product_link(page: BeautifulSoup) -> Optional[str]:
-    '''Посилання на окремий продукт'''
+    '''Link to the individual product'''
     try:
         link = page.find('a', class_='product-link goods-tile__heading').get('href')
-        logging.info("Посилання на продукт отримано успішно")
+        logging.info("Product link retrieved successfully")
         return link
     except AttributeError:
-        logging.warning("Не вдалося знайти посилання на продукт.")
+        logging.warning("Failed to find the product link.")
         return None
 
 def get_specification_link(product_url: str) -> Optional[str]:
-    '''Посилання на сторінку детальної специфікації кожного продукту'''
+    '''Link to the detailed product specification page'''
     try:
         soup = connect(product_url)
         specification_link_conn = soup.findAll('li', class_='tabs__item ng-star-inserted')
         if specification_link_conn:
-            logging.info("Отримано посилання на специфікацію продукту")
+            logging.info("Product specification link retrieved")
             return specification_link_conn[1].find('a', class_='ng-star-inserted').get('href')
     except Exception as e:
-        logging.error(f"Не вдалося знайти посилання на специфікацію: {e}")
+        logging.error(f"Failed to find the specification link: {e}")
     return None
 
 def get_product_title(page: BeautifulSoup) -> str:
-    '''Назва продукту'''
+    '''Product title'''
     try:
         title = page.find('a', class_='product-link goods-tile__heading').text
-        logging.info("Назва продукту отримана успішно")
+        logging.info("Product title retrieved successfully")
         return title
     except Exception as e:
-        logging.error(f"Не вдалося отримати назву продукту: {e}")
+        logging.error(f"Failed to retrieve product title: {e}")
         return ""
 
 def get_product_price(page: BeautifulSoup) -> str:
-    '''Ціна продукту'''
+    '''Product price'''
     try:
         price = re.sub("[^A-Za-z0-9]", "", page.find('span', class_='goods-tile__price-value').text[0:-2])
-        logging.info("Ціна продукту отримана успішно")
+        logging.info("Product price retrieved successfully")
         return price
     except Exception as e:
-        logging.warning(f"Не вдалося отримати ціну продукту.")
+        logging.warning(f"Failed to retrieve product price.")
         return ""
 
 def pick_heders(link_to_product_specification: str) -> List[str]:
-    '''Збір хедерів'''
+    '''Retrieve headers'''
     try:
         heders = []
         sections = connect(link_to_product_specification).findAll('section', class_='group ng-star-inserted')
         for section in sections:
             specification_name = section.find('dt', class_='label')
             heders.append(specification_name.text)
-        logging.info("Хедери зібрані успішно")
+        logging.info("Headers retrieved successfully")
         return heders
     except Exception as e:
-        logging.error(f"Не вдалося зібрати хедери: {e}")
+        logging.error(f"Failed to retrieve headers: {e}")
         return []
 
 def get_specification_details(link_to_product_specification: str, heders_to_chek: List[str]) -> List[str]:
-    '''Детальна специфікація продукту'''
+    '''Detailed product specification'''
     try:
         product_specification_details = []
         pick_heders = []
@@ -108,26 +107,26 @@ def get_specification_details(link_to_product_specification: str, heders_to_chek
         missing_indices = [heders_to_chek.index(item) for item in heders_to_chek if item not in pick_heders]
         for i in missing_indices:
             product_specification_details.insert(i, "")
-        logging.info("Детальна специфікація продукту отримана успішно")
+        logging.info("Product specification details retrieved successfully")
         return product_specification_details
     except Exception as e:
-        logging.error(f"Не вдалося отримати детальну специфікацію продукту: {e}")
+        logging.error(f"Failed to retrieve product specification details: {e}")
         return []
 
 def save_to_csv(full_product_specification: List[List[Union[str, None]]], heder: List[str]) -> None:
-    '''Збереження інформації до файлу'''
+    '''Save the information to a file'''
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         filename = f'./Raw_data/Raw_data_{timestamp}.csv'
         df = pd.DataFrame(full_product_specification, columns=heder)
         df.to_csv(filename, sep=',', encoding='utf8', index=False)
-        logging.info(f'Збір даних завершено. Загальна кількість зібраних продуктів: {len(full_product_specification)}')
-        logging.info(f'--------Дані збережено в файл: {filename}')
+        logging.info(f'Data collection completed. Total products collected: {len(full_product_specification)}')
+        logging.info(f'--------Data saved to file: {filename}')
     except Exception as e:
-        logging.error(f"-------Помилка при збереженні даних до CSV: {e}")
+        logging.error(f"-------Error saving data to CSV: {e}")
 
 def main() -> None:
-    logging.info("--------Початок збору даних по продуктам")
+    logging.info("--------Starting product data collection")
     try:
         url_main = "https://rozetka.pl/laptopy-80004/c80004/page={page};producer=apple/"
         last_page = int(get_last_page(url_main))
@@ -146,7 +145,7 @@ def main() -> None:
         heder = ['Name', 'Price'] + heders
         save_to_csv(full_product_specification, heder)
     except Exception as e:
-        logging.error(f"----Помилка під час збору даних: {e}")
+        logging.error(f"----Error during data collection: {e}")
 
 if __name__ == "__main__":
     main()
