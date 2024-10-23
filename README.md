@@ -89,4 +89,3 @@ Summary:
 The README includes information about the project, its scripts, requirements, usage instructions, and file structure.
 Key functionalities, such as scraping, cleaning, and visualization, are explained clearly.
 Logging and future improvements are also mentioned.
-If you want to adjust or add more details, feel free to update!
