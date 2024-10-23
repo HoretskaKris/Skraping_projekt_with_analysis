@@ -78,10 +78,12 @@ Copy code
 ├── data_cleaning.py                   # Script for cleaning and normalizing data
 ├── visualization.py                   # Script for visualizing data
 └── README.md                          # This README file
+
 Future Improvements
 Additional data analysis: Add more analysis of product features, such as battery life, display type, etc.
 Automated updates: Integrate scheduled scraping to collect up-to-date product data.
 Better error handling: Improve error management in the scraping and data processing scripts.
+
 License
 This project is licensed under the MIT License.
 
