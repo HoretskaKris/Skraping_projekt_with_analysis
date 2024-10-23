@@ -85,7 +85,3 @@ Better error handling: Improve error management in the scraping and data process
 License
 This project is licensed under the MIT License.
 
-Summary:
-The README includes information about the project, its scripts, requirements, usage instructions, and file structure.
-Key functionalities, such as scraping, cleaning, and visualization, are explained clearly.
-Logging and future improvements are also mentioned.
